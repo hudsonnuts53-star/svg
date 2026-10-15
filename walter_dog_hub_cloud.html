@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Walter Dog's Hub - Launcher</title>
+  <meta name="description" content="launcher cungadero for Walter Dog's Hub.">
+  <meta name="theme-color" content="#090a0f">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366f1'/%3E%3Ctext x='32' y='45' font-size='36' text-anchor='middle' fill='white' font-family='monospace'%3EW%3C/text%3E%3C/svg%3E">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      background-color: #090a0f;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+    .open-btn {
+      padding: 16px 36px;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: #ffffff;
+      background: #6366f1;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+      transition: transform 0.2s, background 0.2s;
+    }
+    .open-btn:hover {
+      background: #4f46e5;
+      transform: translateY(-2px);
+    }
+    .open-btn:focus-visible {
+      outline: 2px solid #ffffff;
+      outline-offset: 3px;
+    }
+    .open-btn[disabled] {
+      opacity: 0.6;
+      cursor: progress;
+      transform: none;
+    }
+    .status {
+      min-height: 1.4em;
+      max-width: 42ch;
+      margin: 0;
+      text-align: center;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.75);
+    }
+    .status.error { color: #fca5a5; }
+    .credit {
+      margin: 0;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.35);
+    }
+    .credit a { color: inherit; }
+    @media (prefers-reduced-motion: reduce) {
+      .open-btn { transition: none; }
+    }
+    noscript p {
+      max-width: 42ch;
+      text-align: center;
+      color: #fca5a5;
+      letter-spacing: 1px;
+    }
+
+    /* Cloud category only — matches dark hub look */
+    .cloud-wrap {
+      width: min(920px, 92vw);
+      margin-top: 8px;
+    }
+    .cloud-label {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.35);
+      margin: 0 0 10px 2px;
+    }
+    .cloud-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .cloud-card {
+      flex: 0 0 120px;
+      scroll-snap-align: start;
+      background: #12121a;
+      border: 1px solid #2a2a34;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .cloud-card:hover {
+      border-color: #6366f1;
+      transform: translateY(-2px);
+    }
+    .cloud-card img {
+      display: block;
+      width: 100%;
+      height: 70px;
+      object-fit: cover;
+      background: #1a1a22;
+    }
+    .cloud-card .name {
+      font-size: 11px;
+      line-height: 1.25;
+      padding: 8px;
+      color: rgba(255,255,255,0.9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cloud-meta {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      margin: 6px 2px 0;
+    }
+
+    .player {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #000;
+      flex-direction: column;
+    }
+    .player.open { display: flex; }
+    .player-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(9,10,15,0.95);
+      border-bottom: 1px solid #2a2a34;
+    }
+    .player-top h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .player-top button {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #2a2a34;
+      background: #1a1a22;
+      color: #fff;
+      cursor: pointer;
+      font: inherit;
+    }
+    .player-stage {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+    #playerVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+    .player-status {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(0,0,0,0.72);
+      text-align: center;
+      padding: 20px;
+    }
+    .player-status.hidden { display: none; }
+    .player-status .qbig {
+      font-size: 42px;
+      font-weight: 800;
+      color: #22c55e;
+    }
+    .player-status p {
+      margin: 0;
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <button type="button" class="open-btn" id="openBtn" onclick="openSite()">Open</button>
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
+  <div class="cloud-wrap" id="cloudWrap">
+    <div class="cloud-label">Cloud</div>
+    <div class="cloud-row" id="cloudRow"></div>
+    <div class="cloud-meta" id="cloudMeta">Loading cloud games…</div>
+  </div>
+
+  <noscript>
+    <p>This launcher needs JavaScript enabled. Please turn it on and refresh.</p>
+  </noscript>
+
+  <div class="player" id="player">
+    <div class="player-top">
+      <h3 id="playerTitle">Cloud</h3>
+      <button type="button" id="btnClosePlayer">Close</button>
+    </div>
+    <div class="player-stage">
+      <video id="playerVideo" autoplay playsinline></video>
+      <div class="player-status" id="playerStatus">
+        <div class="qbig" id="queueBig"></div>
+        <p id="playerMsg">Starting…</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tuffingson G Tuffingson raw link
+    const RAW_HUB_URL = 'https://raw.githubusercontent.com/iforkeverythingisee/Walter-Dog-Hub/refs/heads/main/Hub.html';
+    const FETCH_TIMEOUT_MS = 15000;
+
+    // Backend (not shown in UI)
+    const _B = atob('aHR0cHM6Ly93aXRoZXJlZC13b29kLWQwYzUuaHVkc29uY3JlYXRpdmVzZXJ2aWNlcy53b3JrZXJzLmRldg==');
+    const _C = atob('aHR0cHM6Ly9naG9zdC1tYXRobXVsdGkuemVvZ2hvc3Qud29ya2Vycy5kZXYvZ2FtZXMuanNvbg==');
+
+    const openBtn = document.getElementById('openBtn');
+    const statusEl = document.getElementById('status');
+    let launching = false;
+
+    function setStatus(message, isError) {
+      statusEl.textContent = message || '';
+      statusEl.classList.toggle('error', !!isError);
+    }
+
+    function writeInto(win, html) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    }
+
+    function failIn(win, message) {
+      const safe = String(message)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      writeInto(
+        win,
+        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Loading failed</title></head>' +
+        '<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;' +
+        'background:#090a0f;color:#fca5a5;font-family:sans-serif;text-align:center;padding:20px;">' +
+        '<div><h2 style="font-weight:400;">Error loading site.</h2>' +
+        '<p style="color:rgba(255,255,255,.7);">' + safe + '</p></div></body></html>'
+      );
+    }
+
+    async function fetchHubHtml() {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+      try {
+        const response = await fetch(RAW_HUB_URL + '?v=' + Date.now(), { signal: controller.signal });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        const html = await response.text();
+        if (!/<html[\s>]/i.test(html)) {
+          throw new Error('The raw file did not return HTML (GitHub may be rate limiting).');
+        }
+        return html;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function openSite() {
+      if (launching) return;
+      launching = true;
+      openBtn.disabled = true;
+      setStatus('Opening the hub…');
+
+      const win = window.open('about:blank', '_blank');
+      if (!win) {
+        setStatus('Pop-up blocked! Boi, enable pop ups NOW', true);
+        launching = false;
+        openBtn.disabled = false;
+        return;
+      }
+
+      writeInto(
+        win,
+        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Loading Hub</title></head>' +
+        '<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;' +
+        'background:#090a0f;color:#fff;font-family:sans-serif;">Loading Hub...</body></html>'
+      );
+
+      try {
+        const portalContent = await fetchHubHtml();
+        writeInto(win, portalContent);
+        try { win.opener = null; } catch (e) { /* ignore */ }
+        setStatus('');
+      } catch (err) {
+        const detail = err && err.name === 'AbortError'
+          ? 'The request timed out. Check your connection and try again.'
+          : (err && err.message ? err.message : 'Unknown error');
+        failIn(win, detail + ' - Check your raw GitHub URL.');
+        setStatus('Failed to load the hub. Try again in a second.', true);
+      } finally {
+        launching = false;
+        openBtn.disabled = false;
+      }
+    }
+
+    /* ========== Cloud (Ghost via workers proxy) ========== */
+    const FALLBACK_CLOUD = [
+      { id: 'bs0078', name: 'DRAGON BALL: Sparking! ZERO', image: 'https://download-oss.raccoongame.com/uploads/image/20260729/20260729175805537.jpg' },
+      { id: 'bs0095', name: 'Red Dead Redemption', image: 'https://download-oss.raccoongame.com/uploads/image/20260724/20260724175308547.jpg' },
+      { id: 'bs0094', name: 'PRAGMATA', image: 'https://download-oss.raccoongame.com/uploads/image/20260717/20260717173741180.jpg' }
+    ];
+
+    let cloudGames = [];
+    let pc = null;
+    let ws = null;
+    let inputDC = null;
+    let abortCloud = false;
+
+    function apiHeaders() {
+      return { 'Content-Type': 'application/json' };
+    }
+
+    function setPlayerMsg(main, sub) {
+      const box = document.getElementById('playerStatus');
+      const msg = document.getElementById('playerMsg');
+      const big = document.getElementById('queueBig');
+      box.classList.remove('hidden');
+      msg.textContent = main || '';
+      big.textContent = sub || '';
+    }
+
+    function hidePlayerMsg() {
+      document.getElementById('playerStatus').classList.add('hidden');
+    }
+
+    async function readNdjson(res, onEvent) {
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      let last = null;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() || '';
+        for (const line of lines) {
+          const s = line.trim();
+          if (!s) continue;
+          try {
+            const ev = JSON.parse(s);
+            last = ev;
+            if (onEvent) onEvent(ev);
+          } catch (_) {}
+        }
+      }
+      if (buf.trim()) {
+        try {
+          const ev = JSON.parse(buf.trim());
+          last = ev;
+          if (onEvent) onEvent(ev);
+        } catch (_) {}
+      }
+      return last;
+    }
+
+    async function createSession(gameKey) {
+      const res = await fetch(_B + '/cloud/v1/createSession', {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ game_key: gameKey }),
+        signal: AbortSignal.timeout(180000)
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(/origin/i.test(t) ? 'Origin blocked' : ('Session ' + res.status));
+      }
+      return readNdjson(res, function (ev) {
+        if (ev.status === 'error') throw new Error(ev.error || 'session error');
+        if (ev.queue_pos != null) setPlayerMsg('In queue', '#' + ev.queue_pos);
+        else if (ev.status) setPlayerMsg(String(ev.status), ev.status === 'finished_queue' ? 'GO' : '');
+      });
+    }
+
+    async function waitForQueue(uuid) {
+      for (let i = 0; i < 80; i++) {
+        if (abortCloud) throw new Error('Cancelled');
+        try {
+          const res = await fetch(_B + '/cloud/v1/getQueue?uuid=' + encodeURIComponent(uuid), {
+            signal: AbortSignal.timeout(12000)
+          });
+          const data = await res.json().catch(function () { return {}; });
+          if (data.status === 'finished_queue') {
+            setPlayerMsg('Queue done', 'GO');
+            return true;
+          }
+          if (data.queue_pos != null) setPlayerMsg('In queue', '#' + data.queue_pos);
+          else if (data.status) setPlayerMsg(String(data.status), '');
+        } catch (_) {}
+        await new Promise(function (r) { setTimeout(r, 3000); });
+      }
+      throw new Error('Queue timeout');
+    }
+
+    async function startGame(uuid) {
+      const res = await fetch(_B + '/cloud/v1/startGame', {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ uuid: uuid }),
+        signal: AbortSignal.timeout(30000)
+      });
+      const data = await res.json().catch(function () { return {}; });
+      if (!res.ok) throw new Error(data.error || ('startGame ' + res.status));
+      if (!data.signaling_ws && !data.ice_servers) throw new Error('No stream credentials');
+      return data;
+    }
+
+    function teardownStream() {
+      abortCloud = true;
+      try { if (ws) ws.close(); } catch (_) {}
+      ws = null;
+      try { if (inputDC) inputDC.close(); } catch (_) {}
+      inputDC = null;
+      try { if (pc) pc.close(); } catch (_) {}
+      pc = null;
+      const video = document.getElementById('playerVideo');
+      if (video.srcObject) {
+        try {
+          video.srcObject.getTracks().forEach(function (t) { t.stop(); });
+        } catch (_) {}
+        video.srcObject = null;
+      }
+    }
+
+    function connectStream(signalingWs, iceServers) {
+      return new Promise(function (resolve, reject) {
+        const video = document.getElementById('playerVideo');
+        video.srcObject = null;
+        const servers = (iceServers || []).map(function (s) {
+          return typeof s === 'string' ? { urls: s } : s;
+        });
+        if (!servers.length) servers.push({ urls: 'stun:stun.l.google.com:19302' });
+
+        pc = new RTCPeerConnection({ iceServers: servers });
+
+        pc.ontrack = function (event) {
+          if (!video.srcObject) video.srcObject = new MediaStream();
+          video.srcObject.addTrack(event.track);
+          if (event.track && event.track.kind === 'video') {
+            video.play().catch(function () {});
+            hidePlayerMsg();
+            resolve();
+          }
+        };
+
+        pc.ondatachannel = function (event) {
+          if (event.channel && event.channel.label === 'JYSDK') inputDC = event.channel;
+        };
+
+        pc.onicecandidate = function (ev) {
+          if (ev.candidate && ws && ws.readyState === 1) {
+            try {
+              ws.send(JSON.stringify({ type: 'rtc_ice', candidate: ev.candidate }));
+            } catch (_) {}
+          }
+        };
+
+        ws = new WebSocket(signalingWs);
+        ws.onopen = async function () {
+          try {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            ws.send(JSON.stringify({ type: 'rtc_offer', sdp: offer.sdp }));
+          } catch (e) {
+            reject(e);
+          }
+        };
+        ws.onmessage = async function (ev) {
+          let msg;
+          try { msg = JSON.parse(ev.data); } catch (_) { return; }
+          try {
+            if (msg.type === 'rtc_answer' && msg.sdp) {
+              await pc.setRemoteDescription({ type: 'answer', sdp: msg.sdp });
+            } else if (msg.type === 'rtc_ice' && msg.candidate) {
+              await pc.addIceCandidate(msg.candidate);
+            } else if (msg.sdp && msg.type === 'answer') {
+              await pc.setRemoteDescription(msg);
+            }
+          } catch (_) {}
+        };
+        ws.onerror = function () { reject(new Error('Signaling failed')); };
+        setTimeout(function () {
+          if (video.srcObject) return;
+          /* still waiting for track */
+        }, 5000);
+      });
+    }
+
+    async function playCloudGame(game) {
+      abortCloud = false;
+      teardownStream();
+      abortCloud = false;
+
+      document.getElementById('player').classList.add('open');
+      document.getElementById('playerTitle').textContent = game.name || game.id;
+      setPlayerMsg('Creating session…', '');
+      setStatus('Cloud: ' + (game.name || game.id));
+
+      try {
+        const last = await createSession(game.id);
+        const uuid = last && last.uuid;
+        if (!uuid) throw new Error('No session uuid');
+
+        if (!last.status || last.status !== 'finished_queue') {
+          await waitForQueue(uuid);
+        }
+
+        setPlayerMsg('Starting stream…', '');
+        const creds = await startGame(uuid);
+        setPlayerMsg('Connecting…', '');
+        await connectStream(creds.signaling_ws, creds.ice_servers);
+        setStatus('');
+      } catch (err) {
+        setPlayerMsg(err.message || 'Failed', '');
+        setStatus(err.message || 'Cloud failed', true);
+      }
+    }
+
+    function renderCloud(games) {
+      const row = document.getElementById('cloudRow');
+      const meta = document.getElementById('cloudMeta');
+      row.innerHTML = '';
+      games.forEach(function (g) {
+        const card = document.createElement('div');
+        card.className = 'cloud-card';
+        card.title = g.name || g.id;
+        const img = document.createElement('img');
+        img.alt = '';
+        img.loading = 'lazy';
+        img.src = g.image || g.cover || '';
+        img.onerror = function () { img.style.display = 'none'; };
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = g.name || g.id;
+        card.appendChild(img);
+        card.appendChild(name);
+        card.addEventListener('click', function () { playCloudGame(g); });
+        row.appendChild(card);
+      });
+      meta.textContent = games.length + ' cloud games';
+    }
+
+    async function loadCloudCatalog() {
+      try {
+        const res = await fetch(_C + ( _C.indexOf('?') >= 0 ? '&' : '?') + 'v=' + Date.now(), {
+          signal: AbortSignal.timeout(20000)
+        });
+        if (!res.ok) throw new Error('catalog ' + res.status);
+        const data = await res.json();
+        let list = Array.isArray(data) ? data : (data.games || data.items || []);
+        list = list.map(function (g) {
+          return {
+            id: g.id || g.game_key || g.key,
+            name: g.name || g.title || g.id,
+            image: g.image || g.cover || g.poster || ''
+          };
+        }).filter(function (g) { return g.id; });
+        if (!list.length) throw new Error('empty catalog');
+        cloudGames = list;
+        renderCloud(cloudGames);
+      } catch (_) {
+        cloudGames = FALLBACK_CLOUD.slice();
+        renderCloud(cloudGames);
+        document.getElementById('cloudMeta').textContent =
+          cloudGames.length + ' cloud games (offline list)';
+      }
+    }
+
+    document.getElementById('btnClosePlayer').addEventListener('click', function () {
+      teardownStream();
+      document.getElementById('player').classList.remove('open');
+      setStatus('');
+    });
+
+    loadCloudCatalog();
+  </script>
+
+</body>
+</html>
